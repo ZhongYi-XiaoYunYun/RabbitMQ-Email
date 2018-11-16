@@ -1,9 +1,7 @@
 package com.sc.entity;
 
 public class User implements java.io.Serializable {
-	
 	private static final long serialVersionUID = 1L;
-	
 	private String username;
 	private String pwd;
 	private String email;
