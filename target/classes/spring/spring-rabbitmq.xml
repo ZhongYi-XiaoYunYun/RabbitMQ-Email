@@ -1,0 +1,72 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.4.xsd
+	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+	<description>Spring RabbitMQ 路由模式（Routing）配置</description>
+	
+	<!--引入配置属性文件 -->
+	<context:property-placeholder location="classpath:config/*.properties" />
+	
+ 	<!-- 配置RabbitMQ连接 -->
+ 	<!-- channel-cache-size，channel的缓存数量，默认值为25 -->
+ 	<!-- cache-mode，缓存连接模式，默认值为CHANNEL(单个connection连接，连接之后关闭，自动销毁) -->
+ 	<rabbit:connection-factory id="connectionFactory" host="${rmq.host}" port="${rmq.port}"
+ 		username="${rmq.user}" password="${rmq.password}" virtual-host="${rmq.virtual}" channel-cache-size="${rmq.channelCacheSize}" cache-mode="CHANNEL"/>
+ 	<rabbit:admin connection-factory="connectionFactory"/>
+ 
+ 	<!--
+ 		定义消息队列
+ 		durable:是否持久化，如果想在RabbitMQ退出或崩溃的时候，不失去queue和消息，需要同时标志队列(queue)
+ 		和交换机(exchange)持久化，即rabbit:queue标签和rabbit:direct-exchange中的durable=true,而消息(message)
+ 		默认是持久化的，可以看类org.springframework.amqp.core.MessageProperties中的属性
+ 		public static final MessageDeliveryMode DEFAULT_DELIVERY_MODE = MessageDeliveryMode.PERSISTENT;
+ 		auto_delete: 当所有消费客户端连接断开后，是否自动删除队列 
+ 		exclusive: 仅创建者可以使用的私有队列，断开后自动删除；
+ 	-->
+ 	<rabbit:queue id="emailqueue" name="SpringRabbit-Email-Queue" durable="true" auto-delete="false" exclusive="false"/>
+ 	
+ 	<!--
+ 		绑定队列
+ 		rabbitmq的exchangeType常用的三种模式：direct，fanout，topic三种,此处为direct模式，即rabbit:direct-exchange标签，
+ 		Direct交换器很简单，如果是Direct类型，就会将消息中的RoutingKey与该Exchange关联的所有Binding中的BindingKey进行比较，如果相等，
+ 		则发送到该Binding对应的Queue中。有一个需要注意的地方：如果找不到指定的exchange，就会报错。
+ 		但routing key找不到的话，不会报错，这条消息会直接丢失，所以此处要小心,
+ 	    auto-delete:自动删除，如果为Yes，则该交换机所有队列queue删除后，自动删除交换机，默认为false 
+ 	-->
+ 	<rabbit:direct-exchange name="SpringRabbit-Email-Exchange" durable="true" auto-declare="true" auto-delete="false">
+ 		<rabbit:bindings>
+ 			<rabbit:binding queue="emailqueue" key="info"></rabbit:binding>
+ 		</rabbit:bindings>
+ 	</rabbit:direct-exchange>
+ 	
+ 	<!-- spring template声明 -->
+ 	<rabbit:template id="rabbitTemplate" connection-factory="connectionFactory" exchange="SpringRabbit-Email-Exchange"></rabbit:template>
+
+	<!-- 消费者  -->
+ 	<bean id="consumer" class="com.sc.consumer.Consumer"/>
+	<!-- 队列监听-->
+ 	<rabbit:listener-container connection-factory="connectionFactory" acknowledge="manual">
+ 		<rabbit:listener queues="emailqueue" ref="consumer" />
+ 	</rabbit:listener-container>
+ 	
+ 	<!-- Spring 邮件发送bean配置 -->
+ 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+ 		<property name="host" value="${mail.host}"></property>
+       <property name="port" value="${mail.port}"></property>
+       <property name="username" value="${mail.username}"></property>
+       <property name="password" value="${mail.password}"></property>
+       <property name="javaMailProperties">
+           <props>
+              <prop key="mail.smtp.auth">true</prop>
+              <prop key="mail.smtp.timeout">25000</prop>
+              <prop key="mail.smtp.socketFactory.class">javax.net.ssl.SSLSocketFactory</prop>
+              <!-- 如果是网易邮箱， mail.smtp.starttls.enable 设置为 false-->  
+              <prop key="mail.smtp.starttls.enable">true</prop>
+           </props>
+       </property>
+ 	</bean>
+ 	
+</beans>
