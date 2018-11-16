@@ -1,5 +1,8 @@
 package com.sc.consumer;
 
+import org.apache.commons.logging.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageListener;
 import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
@@ -18,6 +21,8 @@ import com.sc.service.MailSendService;
 
 public class Consumer implements ChannelAwareMessageListener{
 	
+	private static final Logger log = LoggerFactory.getLogger(Consumer.class);
+	
 	@Autowired
 	private MailSendService mailSendService;
 
@@ -28,7 +33,7 @@ public class Consumer implements ChannelAwareMessageListener{
 				return;
 			}
 			User user = (User) SerializationUtils.deserialize(message.getBody());
-			System.out.println("消费者消费："+user);
+			log.info("消费者消费{}"+user);
 			//发送邮件
 			mailSendService.sendMail(user);
 			//手动确认
