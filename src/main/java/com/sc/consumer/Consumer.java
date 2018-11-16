@@ -33,7 +33,7 @@ public class Consumer implements ChannelAwareMessageListener{
 				return;
 			}
 			User user = (User) SerializationUtils.deserialize(message.getBody());
-			log.info("消费者消费{}"+user);
+			log.info("消费者消费{}",user);
 			//发送邮件
 			mailSendService.sendMail(user);
 			//手动确认
