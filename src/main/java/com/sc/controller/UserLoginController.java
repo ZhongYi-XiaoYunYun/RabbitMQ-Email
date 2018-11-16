@@ -10,17 +10,17 @@ import com.sc.service.UserService;
 
 @Controller
 @RequestMapping("/user")
-public class UserRegistController {
+public class UserLoginController {
 	
 	@Autowired
 	private UserService userService;
 
-	@RequestMapping(value="/regist", method=RequestMethod.POST)
+	@RequestMapping(value="/login", method=RequestMethod.POST)
 	@ResponseBody
-	public boolean regist(String username,String pwd,String email) {
+	public boolean login(String username,String pwd,String email) {
 		//这里简单模拟正常注册，没有数据库交互
 		//执行注册逻辑
-		userService.regist(username,pwd,email);
+		userService.login(username,pwd,email);
 		return true;
 	}
 }

@@ -29,7 +29,9 @@ public class Consumer implements ChannelAwareMessageListener{
 			}
 			User user = (User) SerializationUtils.deserialize(message.getBody());
 			System.out.println("消费者消费："+user);
+			//发送邮件
 			mailSendService.sendMail(user);
+			//手动确认
 			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
 		} catch (Exception e) {
 			e.printStackTrace();
